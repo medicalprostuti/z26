@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>যুলোজি অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "অন্তঃশ্বসন-",
+          options: {
+            a: "কোষ ও রক্তে সংঘটিত হয়",
+            b: "নির্দিষ্ট পরিমাণ শক্তি উৎপন্ন করে",
+            c: "এনজাইম দ্বারা প্রভাবিত হয় না",
+            d: "একটি ভৌত রাসায়নিক প্রক্রিয়া",
+          },
+          correct: "b",
+          explanation:
+            "<p>অন্তঃশ্বসন (Internal respiration) বা কোষীয় শ্বসন হলো একটি জৈব-রাসায়নিক প্রক্রিয়া যা কোষে সংঘটিত হয়। এই প্রক্রিয়ায় গ্লুকোজ ভেঙে শক্তি (ATP) উৎপন্ন হয়, যা দেহের বিভিন্ন কাজে ব্যবহৃত হয়। সুতরাং, এটি <strong>নির্দিষ্ট পরিমাণ শক্তি উৎপন্ন করে</strong>।</p>",
+        },
+        {
+          id: 2,
+          question: "প্রশ্বাস বায়ুতে কার্বন ডাইঅক্সাইড (CO2) এর পরিমাণ কত?",
+          options: {
+            a: "৫.২%",
+            b: "১৩.৭%",
+            c: "২০.০%",
+            d: "০.০৪%",
+          },
+          correct: "d",
+          explanation:
+            "<p>প্রশ্বাস বায়ুতে (Inhaled air) কার্বন ডাইঅক্সাইড (CO<sub>2</sub>) এর পরিমাণ প্রায় <strong>০.০৪%</strong>। এটি বায়ুমণ্ডলে কার্বন ডাই অক্সাইডের স্বাভাবিক ঘনত্ব।</p>",
+        },
+        {
+          id: 3,
+          question:
+            "একজন সুস্থ পূর্ণবয়স্ক মানুষ বিশ্রামরত অবস্থায় মিনিটে কতবার শ্বসনক্রিয়া সম্পাদন করে?",
+          options: {
+            a: "২০-২৫ বার",
+            b: "১৪-১৮ বার",
+            c: "৭-১০ বার",
+            d: "৩০-৪০ বার",
+          },
+          correct: "b",
+          explanation:
+            "<p>একজন সুস্থ পূর্ণবয়স্ক মানুষ বিশ্রামরত অবস্থায় মিনিটে প্রায় <strong>১৪-১৮ বার</strong> শ্বসনক্রিয়া (Respiration) সম্পাদন করে। এটি শ্বাস-প্রশ্বাস হার (Respiratory rate) নামে পরিচিত।</p>",
+        },
+        {
+          id: 4,
+          question: "কোনটি বহিঃশ্বসন এর বৈশিষ্ট্য?",
+          options: {
+            a: "এনজাইম গুরুত্বপূর্ণ ভূমিকা পালন করে",
+            b: "ফুসফুসের অভ্যন্তরে সংঘটিত হয়",
+            c: "H2O ও CO2 তৈরী হয়",
+            d: "শক্তি উৎপন্ন হয়",
+          },
+          correct: "b",
+          explanation:
+            "<p>বহিঃশ্বসন (External respiration) হলো ফুসফুস এবং রক্তে গ্যাসীয় বিনিময়ের প্রক্রিয়া। এটি <strong>ফুসফুসের অভ্যন্তরে সংঘটিত হয়</strong>, যেখানে বায়ুথলি (অ্যালভিওলাস) এবং রক্তনালীর (কৈশিক জালক) মধ্যে অক্সিজেন ও কার্বন ডাই অক্সাইডের আদান-প্রদান ঘটে। শক্তি উৎপন্ন হয় অন্তঃশ্বসনে, এবং H<sub>2</sub>O ও CO<sub>2</sub> উৎপন্ন হয় কোষীয় শ্বসনে।</p>",
+        },
+        {
+          id: 5,
+          question: "প্রশ্বাস বায়ুর অক্সিজেনের পরিমাণ কত?",
+          options: {
+            a: "১৩.৭%",
+            b: "২০.৯%",
+            c: "৫.২%",
+            d: "০.০৮%",
+          },
+          correct: "b",
+          explanation:
+            "<p>প্রশ্বাস বায়ুর (Inhaled air) অক্সিজেনের পরিমাণ প্রায় <strong>২০.৯%</strong>। এটি বায়ুমণ্ডলে অক্সিজেনের স্বাভাবিক শতাংশ।</p>",
+        },
+        {
+          id: 6,
+          question: "শ্বসনকেন্দ্র কোথায় অবস্থিত?",
+          options: {
+            a: "পনস ও মেডুলা",
+            b: "স্পাইনাল স্নায়ুরজ্জু",
+            c: "মধ্যমস্তিষ্ক",
+            d: "সেরেবেলাম",
+          },
+          correct: "a",
+          explanation:
+            "<p>শ্বসনকেন্দ্র (Respiratory center) মস্তিষ্কের <strong>পনস ও মেডুলায়</strong> (Pons and Medulla oblongata) অবস্থিত। এই কেন্দ্রগুলো শ্বাস-প্রশ্বাসের ছন্দ এবং হার নিয়ন্ত্রণ করে।</p>",
+        },
+        {
+          id: 7,
+          question: "হেরিং-ব্রয়ার প্রতিবর্ত ক্রিয়া ঘটে কোন অঙ্গে?",
+          options: {
+            a: "হৃৎপিণ্ডে",
+            b: "স্পাইনাল কর্ডে",
+            c: "ফুসফুসে",
+            d: "যকৃতে",
+          },
+          correct: "c",
+          explanation:
+            "<p><strong>হেরিং-ব্রয়ার প্রতিবর্ত ক্রিয়া</strong> (Hering-Breuer reflex) <strong>ফুসফুসে</strong> ঘটে। এটি ফুসফুসের অতিরিক্ত প্রসারণ প্রতিরোধ করে এবং শ্বাস-প্রশ্বাসের গভীরতা নিয়ন্ত্রণ করে।</p>",
+        },
+        {
+          id: 8,
+          question:
+            "মানুষের নিঃশ্বাসে দৈনিক কি পরিমাণ পানি দেহ হতে বাষ্পাকারে বের হয়?",
+          options: {
+            a: "২০০-৩০০ মি.লি",
+            b: "৩০০-৪০০ মি.লি",
+            c: "৫০০-৬০০ মি.লি",
+            d: "৬০০-৮০০ মি.লি",
+          },
+          correct: "d",
+          explanation:
+            "<p>মানুষের নিঃশ্বাসে দৈনিক প্রায় <strong>৬০০-৮০০ মি.লি</strong> পানি দেহ হতে বাষ্পাকারে বের হয়। এটি দেহের তাপমাত্রা নিয়ন্ত্রণেও সাহায্য করে।</p>",
+        },
+        {
+          id: 9,
+          question:
+            "মানুষের প্রশ্বাস বায়ুতে অক্সিজেন ও কার্বন ডাই অক্সাইডের পরিমাণ কত শতাংশ?",
+          options: {
+            a: "২০.৫% ও ০.০৮%",
+            b: "১৯.৯% ও ১.০%",
+            c: "২১.৯% ও ০.৫%",
+            d: "১৮.৯% ও ০.৮%",
+          },
+          correct: "a",
+          explanation:
+            "<p>মানুষের প্রশ্বাস বায়ুতে (Inhaled air) অক্সিজেনের পরিমাণ প্রায় <strong>২০.৫%</strong> (বা ২০.৯%) এবং কার্বন ডাই অক্সাইডের পরিমাণ প্রায় <strong>০.০৪%</strong>। প্রশ্নের অপশনে 0.08% কাছাকাছি মান হিসেবে দেওয়া হয়েছে।</p>",
+        },
+        {
+          id: 10,
+          question: "ফুসফুসের সর্বমোট বায়ুধারণ ক্ষমতাকে বলে-",
+          options: {
+            a: "ভাইটাল ক্যাপাসিটি",
+            b: "টাইডাল বায়ু",
+            c: "টাইডাল ভলিউম",
+            d: "রেসিডিউয়াল ভলিউম",
+          },
+          correct: "a",
+          explanation:
+            "<p>ফুসফুসের সর্বমোট বায়ুধারণ ক্ষমতাকে <strong>ভাইটাল ক্যাপাসিটি</strong> (Vital capacity) বলে। এটি একটি গভীর প্রশ্বাসের পর সর্বোচ্চ পরিমাণে বাতাস বের করে দেওয়ার ক্ষমতাকে বোঝায়।</p>",
+        },
+        {
+          id: 11,
+          question: "মানবদেহে বহিঃশ্বসন কয়টি পর্যায়ে সম্পন্ন হয়?",
+          options: {
+            a: "২",
+            b: "৩",
+            c: "৮",
+            d: "৬",
+          },
+          correct: "a",
+          explanation:
+            "<p>মানবদেহে বহিঃশ্বসন (External respiration) দুটি পর্যায়ে সম্পন্ন হয়: <strong>প্রশ্বাস</strong> (Inhalation) এবং <strong>নিঃশ্বাস</strong> (Exhalation)।</p>",
+        },
+        {
+          id: 12,
+          question:
+            "O<sub>২</sub> এবং CO<sub>২</sub> এর বিনিময় ঘটে নিম্নের কোন অংশে?",
+          options: {
+            a: "অ্যালভিওলাস",
+            b: "নেফ্রন",
+            c: "নিউরন",
+            d: "ভিলাই",
+          },
+          correct: "a",
+          explanation:
+            "<p>O<sub>২</sub> এবং CO<sub>২</sub> এর বিনিময় <strong>অ্যালভিওলাস</strong> (Alveolus) এবং এর চারপাশে থাকা কৈশিক নালীর মধ্যে ঘটে। এটি গ্যাসীয় বিনিময়ের মূল স্থান।</p>",
+        },
+        {
+          id: 13,
+          question: "শ্বসনের স্নায়বিক নিয়ন্ত্রণে কোন স্নায়ু ভূমিকা রাখে?",
+          options: {
+            a: "অ্যাবডুসেন্স",
+            b: "ইলিয়াক",
+            c: "অলফ্যাক্টরী",
+            d: "ভ্যাগাস",
+          },
+          correct: "d",
+          explanation:
+            "<p>শ্বসনের স্নায়বিক নিয়ন্ত্রণে <strong>ভ্যাগাস</strong> (Vagus) স্নায়ু (ক্র্যানিয়াল স্নায়ু X) গুরুত্বপূর্ণ ভূমিকা রাখে। এটি ফুসফুস থেকে শ্বসনকেন্দ্রে সংকেত বহন করে, যা শ্বাস-প্রশ্বাসের ছন্দ ও গভীরতা নিয়ন্ত্রণ করে।</p>",
+        },
+        {
+          id: 14,
+          question: "অন্তঃশ্বসন প্রধানত কোষের কোথায় সংঘঠিত হয়?",
+          options: {
+            a: "প্লাজমামেমব্রেনে",
+            b: "নিউক্লিয়াসে",
+            c: "মাইটোকন্ড্রিয়ায়",
+            d: "কোষগহ্বরে",
+          },
+          correct: "c",
+          explanation:
+            "<p>অন্তঃশ্বসন (Internal respiration) প্রধানত কোষের <strong>মাইটোকন্ড্রিয়ায়</strong> (Mitochondria) সংঘটিত হয়। এটি কোষীয় শ্বসনের প্রধান স্থান, যেখানে গ্লুকোজ ভেঙে ATP (শক্তি) উৎপন্ন হয়।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                  <label class="option" data-option="${option}">
+                    <div class="circle">${option}</div>
+                    <span class="option-text">${question.options[option]}</span>
+                  </label>
+                `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                     <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                     <div class="explanation-content">
+                       <div class="explanation-label">ব্যাখ্যা:</div>
+                       ${question.explanation}
+                     </div>
+                   </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                <p class="question-label">${index + 1}. ${question.question}</p>
+                <div class="options">
+                  ${optionsHTML}
+                </div>
+                ${explanationHTML}
+              `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
